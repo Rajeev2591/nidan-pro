@@ -1,11 +1,10 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-
-  return {
-    base: '/nidan-pro/',
-    plugins: [react()],
-  };
-});
+export default defineConfig({
+  plugins: [react()],
+  base: '/nidan-pro/', // Matches your repository name exactly
+  build: {
+    outDir: 'dist',
+  }
+})
