@@ -1,0 +1,19 @@
+{
+  "name": "NIDAN Pro Clinical Workspace",
+  "short_name": "NIDAN Pro",
+  "description": "Clinical documentation and prescription workspace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f6f5",
+  "theme_color": "#143f45",
+  "icons": [
+    {
+      "src": "/nidan-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
