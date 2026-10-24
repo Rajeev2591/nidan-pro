@@ -2,29 +2,746 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --bs-primary: #18525a;
+    --bs-primary-rgb: 24, 82, 90;
+    --bs-success: #287766;
+    --bs-success-rgb: 40, 119, 102;
+    --bs-danger: #b55348;
+    --bs-danger-rgb: 181, 83, 72;
+    --bs-body-color: #25383b;
+    --bs-body-bg: #f2f6f5;
+    --bs-border-color: #dce7e4;
+    --bs-border-radius: 0.65rem;
+    --bs-border-radius-lg: 0.8rem;
+    --app-ink: #183c41;
+    --app-muted: #6a7c7d;
+    --app-line: #dce7e4;
+    --app-paper: #ffffff;
+    --app-wash: #f2f6f5;
+    --app-teal-soft: #eaf3f1;
+}
+
+body {
+    min-width: 320px;
+    background: var(--app-wash);
+    color: var(--bs-body-color);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.925rem;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+.app-shell {
+    background: var(--app-wash);
+}
+
+.app-navbar {
+    min-height: 76px;
+    background: #143f45;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.app-navbar .navbar-brand {
+    color: white;
+}
+
+.brand-mark,
+.clinician-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 0.65rem;
+    font-weight: 750;
+}
+
+.brand-mark {
+    width: 42px;
+    height: 42px;
+    color: #143f45;
+    background: #e2b98b;
+    font-size: 1.15rem;
+}
+
+.brand-name {
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.brand-name span {
+    color: #e2b98b;
+    font-weight: 600;
+}
+
+.brand-caption {
+    margin-top: 1px;
+    color: #b8ceca;
+    font-size: 0.73rem;
+}
+
+.abdm-badge,
+.soft-badge,
+.session-indicator,
+.medication-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.abdm-badge {
+    padding: 0.45rem 0.7rem;
+    color: #d6f0e5;
+    background: rgba(51, 129, 106, 0.22);
+    border: 1px solid rgba(153, 213, 188, 0.28);
+    font-size: 0.72rem;
+    font-weight: 650;
+}
+
+.abdm-dot,
+.session-indicator-dot,
+.recording-indicator {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #6fbd92;
+}
+
+.clinician-chip {
+    color: #e0eae8;
+    font-size: 0.82rem;
+}
+
+.clinician-avatar {
+    width: 34px;
+    height: 34px;
+    color: #153e43;
+    background: #d4e2de;
+    font-size: 0.72rem;
+}
+
+.section-kicker,
+.prescription-label,
+.meta-label,
+.vital-label {
+    color: var(--app-muted);
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-transform: uppercase;
+}
+
+.section-kicker {
+    margin-bottom: 0.3rem;
+}
+
+.workspace-title {
+    color: var(--app-ink);
+    font-size: clamp(1.45rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+}
+
+.workspace-subtitle {
+    color: var(--app-muted);
+    font-size: 0.9rem;
+}
+
+.session-indicator {
+    padding: 0.5rem 0.75rem;
+    color: #3d5d59;
+    background: #e8f0ed;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.session-indicator-dot {
+    width: 0.42rem;
+    height: 0.42rem;
+    background: #42856f;
+}
+
+.session-divider {
+    color: #9badab;
+}
+
+.workspace-card,
+.prescription-card {
+    overflow: hidden;
+    border: 1px solid var(--app-line);
+    border-radius: 0.8rem;
+    background: var(--app-paper);
+    box-shadow: 0 8px 24px rgba(28, 62, 62, 0.045);
+}
+
+.workspace-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.2rem 1.25rem;
+    border-bottom: 1px solid #e8efed;
+    background: #fff;
+}
+
+.workspace-card-header .card-title {
+    color: var(--app-ink);
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.workspace-card .card-body {
+    padding: 1.25rem;
+}
+
+.soft-badge {
+    padding: 0.35rem 0.65rem;
+    color: #32675f;
+    background: var(--app-teal-soft);
+    font-size: 0.7rem;
+    font-weight: 650;
+}
+
+.form-label {
+    margin-bottom: 0.4rem;
+    color: #4e6363;
+    font-size: 0.76rem;
+    font-weight: 650;
+}
+
+.form-control {
+    min-height: 42px;
+    border-color: #d6e1de;
+    color: #25383b;
+    font-size: 0.86rem;
+}
+
+.form-control:focus {
+    border-color: #6eaaa0;
+    box-shadow: 0 0 0 0.2rem rgba(44, 122, 110, 0.12);
+}
+
+.recording-panel {
+    padding: 1rem;
+    border: 1px solid #d9e8e3;
+    border-radius: 0.7rem;
+    background: #f4f8f6;
+}
+
+.recording-title {
+    color: var(--app-ink);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.recording-caption,
+.form-text {
+    margin-top: 0.2rem;
+    color: var(--app-muted);
+    font-size: 0.73rem;
+}
+
+.recording-indicator {
+    width: 0.65rem;
+    height: 0.65rem;
+    background: #8a9d98;
+}
+
+.recording-active {
+    border-color: #e6b5ac;
+    background: #fff8f6;
+}
+
+.recording-active .recording-indicator {
+    background: #c15d4d;
+    box-shadow: 0 0 0 4px rgba(193, 93, 77, 0.12);
+    animation: record-pulse 1.4s ease-in-out infinite;
+}
+
+.recording-pending {
+    border-color: #b8d3cb;
+    background: #f0f7f4;
+}
+
+.recording-pending .recording-indicator {
+    background: #338474;
+}
+
+.recording-button {
+    min-height: 40px;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.btn-primary {
+    --bs-btn-bg: #18525a;
+    --bs-btn-border-color: #18525a;
+    --bs-btn-hover-bg: #123f45;
+    --bs-btn-hover-border-color: #123f45;
+    --bs-btn-active-bg: #123f45;
+    --bs-btn-active-border-color: #123f45;
+    --bs-btn-disabled-bg: #18525a;
+    --bs-btn-disabled-border-color: #18525a;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #18525a;
+    --bs-btn-border-color: #9bb8b2;
+    --bs-btn-hover-bg: #18525a;
+    --bs-btn-hover-border-color: #18525a;
+    --bs-btn-active-bg: #18525a;
+    --bs-btn-active-border-color: #18525a;
+}
+
+.btn-recording-stop {
+    color: #fff;
+    background: #a84c43;
+    border-color: #a84c43;
+}
+
+.btn-recording-stop:hover {
+    color: #fff;
+    background: #8e3f38;
+    border-color: #8e3f38;
+}
+
+.transcript-field {
+    min-height: 170px;
+    resize: vertical;
+    background: #fbfcfc;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.83rem;
+    line-height: 1.7;
+}
+
+.action-stack {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+    padding-top: 0.15rem;
+}
+
+.action-stack .btn {
+    min-height: 42px;
+    font-size: 0.8rem;
+    font-weight: 650;
+}
+
+.prescription-header {
+    padding: 1.45rem 1.5rem 1.25rem;
+    border-bottom: 2px solid #1c5158;
+}
+
+.prescription-label {
+    margin-bottom: 0.55rem;
+    color: #397369;
+}
+
+.doctor-name {
+    margin-bottom: 0.3rem;
+    color: #183c41;
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    font-weight: 750;
+}
+
+.doctor-credential {
+    color: #405b5c;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.doctor-credential span,
+.doctor-address span {
+    padding: 0 0.2rem;
+    color: #9aaba8;
+}
+
+.doctor-address {
+    color: var(--app-muted);
+    font-size: 0.75rem;
+}
+
+.prescription-verification {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    align-self: flex-start;
+    padding: 0.45rem;
+    border: 1px solid #e2eae7;
+    border-radius: 0.65rem;
+    background: #f8faf9;
+}
+
+.qr-mark {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    padding: 0.3rem;
+    place-items: center;
+    border: 1px solid #e1e8e6;
+    border-radius: 0.35rem;
+    background: white;
+}
+
+.qr-mark svg {
+    width: 100%;
+    height: 100%;
+    fill: #1a4d53;
+}
+
+.abdm-badge-light {
+    color: #316a5a;
+    background: #eaf4ef;
+    border-color: #d3e8dc;
+}
+
+.prescription-body {
+    padding: 1.35rem 1.5rem 0.5rem;
+}
+
+.patient-summary {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #e2eae7;
+    border-radius: 0.65rem;
+    background: #f8faf9;
+}
+
+.meta-label {
+    margin-bottom: 0.25rem;
+    color: #82918f;
+    font-size: 0.62rem;
+}
+
+.meta-value {
+    overflow-wrap: anywhere;
+    color: #243e40;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.abha-value {
+    color: #236b68;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.75rem;
+}
+
+.vitals-strip {
+    position: relative;
+    margin-bottom: 1.2rem;
+    padding: 0.85rem 0.85rem 1.6rem;
+    border: 1px solid #e6e4d6;
+    border-radius: 0.65rem;
+    background: #faf9f2;
+}
+
+.vital-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+}
+
+.vital-item + .vital-item {
+    border-left: 1px solid #e4e4d9;
+}
+
+.vital-label {
+    color: #7d8880;
+    font-size: 0.6rem;
+}
+
+.vital-item strong {
+    color: #354944;
+    font-size: 0.94rem;
+}
+
+.vital-item small {
+    color: #74817b;
+    font-size: 0.68rem;
+    font-weight: 500;
+}
+
+.vitals-note {
+    position: absolute;
+    right: 0.85rem;
+    bottom: 0.45rem;
+    color: #8a8d7b;
+    font-size: 0.62rem;
+}
+
+.clinical-section {
+    padding: 1.1rem 0;
+    border-bottom: 1px solid #e9efed;
+}
+
+.section-heading {
+    margin-bottom: 0.85rem;
+}
+
+.section-heading h3 {
+    margin: 0;
+    color: #263f41;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.soap-index,
+.rx-symbol {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.55rem;
+    color: #28655e;
+    background: #eaf3f1;
+    font-size: 0.83rem;
+    font-weight: 750;
+}
+
+.complaints-copy {
+    color: #455b5b;
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+.diagnosis-list {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.diagnosis-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.62rem 0.75rem;
+    border: 1px solid #e7eeec;
+    border-radius: 0.5rem;
+    background: #fbfcfc;
+}
+
+.diagnosis-code {
+    color: #3d5556;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.diagnosis-row .badge {
+    font-size: 0.63rem;
+    font-weight: 650;
+}
+
+.diagnosis-row .text-bg-primary {
+    color: #fff !important;
+    background: #2b6a62 !important;
+}
+
+.diagnosis-row .text-bg-light {
+    color: #637471 !important;
+    background: #edf2f0 !important;
+}
+
+.rx-symbol {
+    color: #945d3d;
+    background: #f7eee7;
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    font-style: italic;
+}
+
+.medication-count {
+    color: #667976;
+    font-size: 0.72rem;
+    font-weight: 650;
+}
+
+.prescription-table-wrap {
+    border: 1px solid #e2eae7;
+    border-radius: 0.55rem;
+}
+
+.prescription-table {
+    min-width: 620px;
+    font-size: 0.74rem;
+}
+
+.prescription-table thead th {
+    padding: 0.7rem 0.65rem;
+    color: #657976;
+    background: #f3f7f5;
+    border-bottom-color: #e2eae7;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.prescription-table tbody td {
+    padding: 0.72rem 0.65rem;
+    color: #536563;
+    border-bottom-color: #edf1ef;
+    vertical-align: top;
+}
+
+.prescription-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.prescription-table .row-number {
+    color: #899795;
+}
+
+.prescription-table .medicine-name {
+    min-width: 130px;
+    color: #2e4c4d;
+    font-weight: 700;
+}
+
+.empty-note {
+    color: #7a8986;
+    font-size: 0.78rem;
+}
+
+.prescription-footer {
+    margin: 0 1.5rem;
+    padding: 1.2rem 0 1.35rem;
+    border-top: 1px solid #e6edeb;
+}
+
+.footer-note {
+    color: #596f6c;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.footer-disclaimer {
+    margin-top: 0.25rem;
+    color: #879491;
+    font-size: 0.66rem;
+}
+
+.signature-block {
+    text-align: right;
+}
+
+.signature-name {
+    color: #24484b;
+    font-family: Georgia, serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    font-weight: 700;
+}
+
+.signature-status {
+    color: #47786b;
+    font-size: 0.61rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.medication-modal {
+    overflow: hidden;
+    border: 1px solid #dbe5e2;
+    border-radius: 0.8rem;
+    box-shadow: 0 1rem 3rem rgba(20, 51, 53, 0.18);
+}
+
+.medication-modal .modal-header,
+.medication-modal .modal-footer {
+    padding: 1.15rem 1.35rem;
+    border-color: #e7eeec;
+}
+
+.medication-modal .modal-body {
+    max-height: min(65vh, 560px);
+    overflow-y: auto;
+    padding: 1.15rem 1.35rem;
+}
+
+.medication-edit-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.medication-edit-row {
+    padding: 0.95rem;
+    border: 1px solid #e3ebe8;
+    border-radius: 0.6rem;
+    background: #f8faf9;
+}
+
+.edit-row-title {
+    margin-bottom: 0.75rem;
+    color: #48615f;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+@keyframes record-pulse {
+    50% { box-shadow: 0 0 0 7px rgba(193, 93, 77, 0.06); }
+}
+
+@media (max-width: 575.98px) {
+    .app-navbar {
+        min-height: 68px;
+    }
+
+    .brand-caption {
+        font-size: 0.66rem;
+    }
+
+    .workspace-heading {
+        margin-bottom: 1.2rem !important;
+    }
+
+    .workspace-card .card-body,
+    .prescription-body {
+        padding: 1rem;
+    }
+
+    .workspace-card-header,
+    .prescription-header {
+        padding: 1rem;
+    }
+
+    .prescription-footer {
+        margin: 0 1rem;
+    }
+
+    .signature-block {
+        text-align: left;
+    }
+}
+
 @media print {
-    @page {
-        margin: 0;
-        size: auto;
-    }
-    body * {
-        visibility: hidden;
-    }
-    #printablePrescription, #printablePrescription * {
-        visibility: visible;
-    }
+    @page { margin: 12mm; size: auto; }
+
+    body * { visibility: hidden; }
+
+    #printablePrescription,
+    #printablePrescription * { visibility: visible; }
+
     #printablePrescription {
         position: absolute;
-        left: 0;
-        top: 0;
+        inset: 0 auto auto 0;
         width: 100%;
         margin: 0;
-        padding: 16px;
-        background: white !important;
-        border: none !important;
-        box-shadow: none !important;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
     }
-    .no-print {
-        display: none !important;
-    }
+
+    #printablePrescription .table-responsive { overflow: visible; }
+    #printablePrescription .prescription-table { min-width: 0; font-size: 9pt; }
+    .no-print { display: none !important; }
 }

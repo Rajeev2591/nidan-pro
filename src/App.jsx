@@ -216,217 +216,236 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-800">
-      {/* Header */}
-      <header className="bg-slate-900 text-white shadow-md py-3.5 px-6 no-print border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2.5 rounded-xl text-white font-bold shadow-md">⚕️</div>
-            <div>
-              <h1 className="text-base font-extrabold tracking-wide text-white">NIDAN PRO <span className="text-xs font-normal text-indigo-300 bg-indigo-950 px-2.5 py-0.5 rounded-md border border-indigo-800 ml-2">React Edition</span></h1>
-              <p className="text-xs text-slate-400">AI-Powered Vernacular Medical Scribe & Practice Suite</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ABDM M3-SYNCED
+    <div className="app-shell min-vh-100 d-flex flex-column">
+      <header className="navbar app-navbar no-print">
+        <div className="container-xl d-flex justify-content-between align-items-center gap-3">
+          <a className="navbar-brand d-flex align-items-center gap-3 m-0" href="#workspace">
+            <span className="brand-mark" aria-hidden="true">N</span>
+            <span>
+              <span className="brand-name d-block">NIDAN <span>PRO</span></span>
+              <span className="brand-caption d-block">Clinical documentation workspace</span>
             </span>
-            <span className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700">Dr. Anand Sharma, M.D.</span>
+          </a>
+          <div className="d-flex align-items-center gap-3">
+            <span className="abdm-badge"><span className="abdm-dot" /> ABDM M3 synced</span>
+            <div className="clinician-chip d-none d-sm-flex align-items-center gap-2">
+              <span className="clinician-avatar">AS</span>
+              <span>Dr. Anand Sharma</span>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-5xl mx-auto p-4 sm:p-6 flex-grow flex flex-col gap-6 w-full">
-        {/* Controls Panel */}
-        <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col gap-5 no-print">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>🎙️</span> Live Consultation Input & Actions
-            </h2>
-            <span className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full font-semibold">Guidelines-Compliant AI Scribe</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Full Name:</label>
-              <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-bold text-slate-900 outline-none" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Age / Gender:</label>
-              <input type="text" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 outline-none" />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-indigo-50/70 to-slate-50 border border-indigo-100 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-bold text-indigo-950 block">{statusLabel}</span>
-              <span className="text-[11px] text-slate-500">Hindi speech transcription by Bhashini</span>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <button onClick={toggleRecording} disabled={isTranscribing} className={`text-xs font-semibold px-5 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto disabled:cursor-wait disabled:opacity-60 ${isRecording ? 'bg-slate-800 text-white animate-pulse' : 'bg-rose-600 hover:bg-rose-700 text-white'}`}>
-                <span>{isRecording ? '⏹️ Stop Scribing' : isTranscribing ? 'Transcribing...' : '🔴 Start Listening'}</span>
-              </button>
-              <button onClick={handleTTS} className="bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-4 py-3 rounded-xl border border-slate-300 transition flex items-center justify-center gap-2 w-full sm:w-auto">
-                🔊 Listen Summary
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button onClick={() => { setEditableMeds(JSON.parse(JSON.stringify(medications))); setIsModalOpen(true); }} className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2">
-              <span>💊 Verify & Confirm Dosages (Modify)</span>
-            </button>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={handleProcessNote} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                <span>⚡ Extract Clinical Note & Auto-Suggest Guidelines</span>
-              </button>
-              <button onClick={() => window.print()} className="bg-indigo-900 hover:bg-indigo-950 text-white font-semibold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                <span>🖨️ Print / Save PDF Prescription</span>
-              </button>
-            </div>
-          </div>
-
+      <main id="workspace" className="container-xl flex-grow-1 py-4 py-lg-5">
+        <div className="workspace-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Consultation Transcript (Editable):</label>
-            <textarea rows="4" value={transcript} onChange={(e) => setTranscript(e.target.value)} className="w-full p-3.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-slate-700 leading-relaxed outline-none"></textarea>
+            <div className="section-kicker">CLINIC / CONSULTATION</div>
+            <h1 className="workspace-title mb-1">Consultation workspace</h1>
+            <p className="workspace-subtitle mb-0">Capture the visit, review the note, and prepare the prescription.</p>
           </div>
-        </section>
+          <div className="session-indicator"><span className="session-indicator-dot" /> Active session <span className="session-divider">/</span> {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+        </div>
 
-        {/* Prescription Card */}
-        <section id="printablePrescription" className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-slate-200/90 flex flex-col justify-between relative min-h-[750px]">
-          <div>
-            <div className="border-b-2 border-indigo-950 pb-5 flex flex-col sm:flex-row justify-between items-start gap-4">
-              <div>
-                <h2 className="text-lg sm:text-2xl font-black tracking-tight text-indigo-950">DR. ANAND SHARMA, M.D.</h2>
-                <p className="text-xs text-slate-700 font-bold mt-0.5">Senior Consultant Physician • Reg. No: UP-48291</p>
-                <p className="text-[11px] text-slate-500 mt-1">NIDAN Healthcare Clinic, Assi Ghat Road, Varanasi (U.P.)</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Phone: +91 98390 12345 • Timing: 09:00 AM - 02:00 PM</p>
-              </div>
-              <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-xl shadow-xs">
-                <div className="w-12 h-12 bg-white p-1 border border-slate-200 flex items-center justify-center rounded">
-                  <svg viewBox="0 0 24 24" className="w-full h-full text-indigo-950 fill-current">
-                    <path d="M2,2H10V10H2V2M4,4V8H8V4H4M14,2H22V10H14V2M16,4V8H20V4H16M2,14H10V22H2V14M4,16V20H8V16H4M18,14V18H22V14H18M14,18V22H16V18H14M20,18V22H22V18H20M12,2H14V6H12V2M12,8H14V12H12V8M12,14H14V18H12V14M12,20H14V22H12V20M6,12H8V14H6V12M16,12H18V14H16V12Z"/>
-                  </svg>
+        <div className="row g-4 align-items-start">
+          <div className="col-12 col-xl-5 no-print">
+            <section className="card workspace-card h-100" aria-labelledby="consultation-heading">
+              <div className="card-header workspace-card-header">
+                <div>
+                  <div className="section-kicker">VISIT DETAILS</div>
+                  <h2 id="consultation-heading" className="card-title mb-0">Consultation input</h2>
                 </div>
-                <div className="text-left leading-tight">
-                  <span className="block text-[10px] font-bold text-indigo-900">ABDM-M3-</span>
-                  <span className="block text-[10px] font-bold text-indigo-900">SYNCED</span>
-                </div>
+                <span className="soft-badge">Hindi · Bhashini</span>
               </div>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 my-5 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3 shadow-inner">
-              <div><span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Patient Name</span><span className="font-bold text-slate-900 text-sm">{patientName}</span></div>
-              <div><span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Age / Gender</span><span className="font-bold text-slate-900 text-sm">{patientAge}</span></div>
-              <div><span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">Consult Date</span><span className="font-bold text-slate-900 text-sm">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
-              <div><span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">ABHA ID</span><span className="font-bold text-indigo-600 text-xs font-mono">{abhaId}</span></div>
-            </div>
-
-            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 my-3 text-xs flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div><strong className="text-slate-600">BP:</strong> <span className="font-bold text-slate-900">120/80 mmHg</span></div>
-                <div><strong className="text-slate-600">Temp:</strong> <span className="font-bold text-slate-900">100.4 °F</span></div>
-                <div><strong className="text-slate-600">SpO2:</strong> <span className="font-bold text-slate-900">98%</span></div>
-              </div>
-              <span className="text-[10px] text-amber-800 font-semibold italic">Vitals verified by assistant</span>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 my-4 text-xs">
-              <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider block mb-1">Chief Complaints (S)</span>
-              <p className="text-slate-800 font-medium text-sm leading-relaxed">{chiefComplaints}</p>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 my-4 text-xs">
-              <div className="flex justify-between items-center mb-2.5">
-                <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider">ICD-10 Diagnostic Coding (A)</span>
-                <span className="text-[9px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded font-bold tracking-wide">GUIDELINES MAPPED</span>
-              </div>
-              <div className="space-y-2">
-                {icdCodes.map((icd, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-slate-200">
-                    <span className="font-semibold text-slate-800">{icd.code}</span>
-                    <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{icd.type}</span>
+              <div className="card-body d-flex flex-column gap-4">
+                <div className="row g-3">
+                  <div className="col-12 col-sm-7">
+                    <label className="form-label" htmlFor="patient-name">Patient name</label>
+                    <input id="patient-name" type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="form-control" autoComplete="name" />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="my-6">
-              <div className="flex justify-between items-end mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl font-serif font-black italic text-indigo-950">Rx</span>
-                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Medications & Dosage Plan</h3>
-                </div>
-              </div>
-
-              <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-100 text-slate-700 text-[10px] uppercase font-bold tracking-wider border-b border-slate-200">
-                      <th className="p-3 w-10">#</th>
-                      <th className="p-3">Medicine Name</th>
-                      <th className="p-3">Dosage & Frequency</th>
-                      <th className="p-3">Duration</th>
-                      <th className="p-3">Instructions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 text-slate-800">
-                    {medications.map((m, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/80">
-                        <td className="p-3 font-medium text-slate-500">{idx + 1}</td>
-                        <td className="p-3 font-bold text-slate-900">{m.name}</td>
-                        <td className="p-3 text-indigo-900 font-medium">{m.dosage}</td>
-                        <td className="p-3">{m.duration}</td>
-                        <td className="p-3 text-slate-600">{m.inst}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-5 mt-8 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-3 text-[10px] text-slate-500">
-            <div>
-              <p>Electronically generated via NIDAN AI Clinical Scribe.</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">Valid without physical stamp in compliance with IT Act 2000 & ABDM Guidelines.</p>
-            </div>
-            <div className="text-center sm:text-right">
-              <div className="font-serif italic text-indigo-950 font-bold text-lg">Dr. Anand Sharma</div>
-              <span className="text-[9px] bg-slate-100 text-slate-700 border border-slate-300 px-3 py-1 rounded-md font-bold tracking-widest block mt-1">DIGITALLY SIGNED & VERIFIED</span>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 no-print p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 flex flex-col gap-4 border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h3 className="text-base font-bold text-indigo-950 flex items-center gap-2"><span>💊</span> Verify & Modify Prescription Medications</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 font-bold text-lg p-1">✕</button>
-            </div>
-            
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {editableMeds.map((med, index) => (
-                <div key={index} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2 text-xs">
-                  <div className="font-bold text-indigo-950">Medicine #{index + 1}</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input type="text" value={med.name} onChange={(e) => { const updated = [...editableMeds]; updated[index].name = e.target.value; setEditableMeds(updated); }} className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 outline-none" />
-                    <input type="text" value={med.dosage} onChange={(e) => { const updated = [...editableMeds]; updated[index].dosage = e.target.value; setEditableMeds(updated); }} className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-indigo-900 font-medium outline-none" />
+                  <div className="col-12 col-sm-5">
+                    <label className="form-label" htmlFor="patient-age">Age / gender</label>
+                    <input id="patient-age" type="text" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="form-control" />
                   </div>
                 </div>
-              ))}
-            </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t">
-              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl">Cancel</button>
-              <button onClick={() => { setMedications(editableMeds); setIsModalOpen(false); }} className="px-5 py-2.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm">Save & Update</button>
-            </div>
+                <div className={`recording-panel ${isRecording ? 'recording-active' : ''} ${isTranscribing ? 'recording-pending' : ''}`}>
+                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <span className="recording-indicator" aria-hidden="true" />
+                      <div>
+                        <div className="recording-title" aria-live="polite">{statusLabel}</div>
+                        <div className="recording-caption">Speech transcription by Bhashini</div>
+                      </div>
+                    </div>
+                    <div className="d-flex flex-column flex-sm-row gap-2">
+                      <button onClick={toggleRecording} disabled={isTranscribing} className={`btn ${isRecording ? 'btn-recording-stop' : 'btn-primary'} recording-button`}>
+                        {isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing…' : 'Start recording'}
+                      </button>
+                      <button onClick={handleTTS} className="btn btn-outline-secondary recording-button">Listen to transcript</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label" htmlFor="consultation-transcript">Consultation transcript</label>
+                  <textarea id="consultation-transcript" rows="7" value={transcript} onChange={(e) => setTranscript(e.target.value)} className="form-control transcript-field" />
+                  <div className="form-text">Review and edit the transcript before extracting the clinical note.</div>
+                </div>
+
+                <div className="action-stack">
+                  <button onClick={handleProcessNote} className="btn btn-primary w-100">Extract clinical note</button>
+                  <button onClick={() => { setEditableMeds(JSON.parse(JSON.stringify(medications))); setIsModalOpen(true); }} className="btn btn-outline-primary w-100">Review medication plan</button>
+                  <button onClick={() => window.print()} className="btn btn-outline-secondary w-100">Print / save prescription</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="col-12 col-xl-7">
+            <section id="printablePrescription" className="card prescription-card" aria-labelledby="prescription-heading">
+              <div className="prescription-header">
+                <div className="d-flex flex-column flex-sm-row justify-content-between gap-3">
+                  <div>
+                    <div className="prescription-label">NIDAN HEALTHCARE CLINIC</div>
+                    <h2 id="prescription-heading" className="doctor-name">Dr. Anand Sharma, M.D.</h2>
+                    <p className="doctor-credential mb-1">Senior Consultant Physician <span>·</span> Reg. No: UP-48291</p>
+                    <p className="doctor-address mb-0">Assi Ghat Road, Varanasi, Uttar Pradesh <span>·</span> +91 98390 12345</p>
+                  </div>
+                  <div className="prescription-verification">
+                    <div className="qr-mark" aria-label="ABDM QR mark">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 2h8v8H2V2Zm2 2v4h4V4H4Zm10-2h8v8h-8V2Zm2 2v4h4V4h-4ZM2 14h8v8H2v-8Zm2 2v4h4v-4H4Zm10-2h3v3h-3v-3Zm4 0h4v2h-2v2h-2v-4Zm-4 5h2v3h-2v-3Zm4 1h4v2h-4v-2Z" />
+                      </svg>
+                    </div>
+                    <span className="abdm-badge abdm-badge-light"><span className="abdm-dot" /> ABDM M3 synced</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card-body prescription-body">
+                <div className="patient-summary row g-3">
+                  <div className="col-6 col-md-3"><div className="meta-label">Patient</div><div className="meta-value">{patientName || '—'}</div></div>
+                  <div className="col-6 col-md-3"><div className="meta-label">Age / gender</div><div className="meta-value">{patientAge || '—'}</div></div>
+                  <div className="col-6 col-md-3"><div className="meta-label">Visit date</div><div className="meta-value">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div></div>
+                  <div className="col-6 col-md-3"><div className="meta-label">ABHA ID</div><div className="meta-value abha-value">{abhaId}</div></div>
+                </div>
+
+                <div className="vitals-strip row g-0" aria-label="Patient vitals">
+                  <div className="col-4 vital-item"><span className="vital-label">Blood pressure</span><strong>120/80 <small>mmHg</small></strong></div>
+                  <div className="col-4 vital-item"><span className="vital-label">Temperature</span><strong>100.4 <small>°F</small></strong></div>
+                  <div className="col-4 vital-item"><span className="vital-label">SpO2</span><strong>98<small>%</small></strong></div>
+                  <div className="vitals-note">Vitals verified by assistant</div>
+                </div>
+
+                <section className="clinical-section">
+                  <div className="section-heading">
+                    <span className="soap-index">S</span>
+                    <div><div className="section-kicker">SUBJECTIVE</div><h3>Chief complaints</h3></div>
+                  </div>
+                  <p className="complaints-copy mb-0">{chiefComplaints || 'No complaints extracted.'}</p>
+                </section>
+
+                <section className="clinical-section">
+                  <div className="section-heading d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-3">
+                      <span className="soap-index">A</span>
+                      <div><div className="section-kicker">ASSESSMENT</div><h3>Diagnostic coding</h3></div>
+                    </div>
+                    <span className="soft-badge">ICD-10</span>
+                  </div>
+                  {icdCodes.length > 0 ? (
+                    <div className="diagnosis-list">
+                      {icdCodes.map((icd, idx) => (
+                        <div key={`${icd.code}-${idx}`} className="diagnosis-row">
+                          <span className="diagnosis-code">{icd.code}</span>
+                          <span className={`badge ${icd.type === 'Primary' ? 'text-bg-primary' : 'text-bg-light'}`}>{icd.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="empty-note mb-0">No diagnostic codes extracted.</p>}
+                </section>
+
+                <section className="clinical-section medication-section">
+                  <div className="section-heading d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-3">
+                      <span className="rx-symbol">Rx</span>
+                      <div><div className="section-kicker">TREATMENT PLAN</div><h3>Medications</h3></div>
+                    </div>
+                    <span className="medication-count">{medications.length} items</span>
+                  </div>
+                  <div className="table-responsive prescription-table-wrap">
+                    <table className="table table-sm align-middle prescription-table mb-0">
+                      <thead>
+                        <tr><th scope="col">#</th><th scope="col">Medicine</th><th scope="col">Dosage & frequency</th><th scope="col">Duration</th><th scope="col">Instructions</th></tr>
+                      </thead>
+                      <tbody>
+                        {medications.length > 0 ? medications.map((medication, idx) => (
+                          <tr key={`${medication.name}-${idx}`}>
+                            <td className="row-number">{idx + 1}</td>
+                            <td className="medicine-name">{medication.name}</td>
+                            <td>{medication.dosage}</td>
+                            <td>{medication.duration}</td>
+                            <td>{medication.inst}</td>
+                          </tr>
+                        )) : <tr><td colSpan="5" className="empty-note text-center py-4">No medications extracted.</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+
+              <footer className="prescription-footer d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3">
+                <div>
+                  <div className="footer-note">Electronically generated clinical document.</div>
+                  <div className="footer-disclaimer">Review all findings and medication instructions before signing.</div>
+                </div>
+                <div className="signature-block">
+                  <div className="signature-name">Dr. Anand Sharma</div>
+                  <span className="signature-status">Digitally signed & verified</span>
+                </div>
+              </footer>
+            </section>
           </div>
         </div>
+      </main>
+
+      {isModalOpen && (
+        <>
+          <div className="modal-backdrop show no-print" onClick={() => setIsModalOpen(false)} />
+          <div className="modal d-block no-print" role="dialog" aria-modal="true" aria-labelledby="medication-modal-title" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsModalOpen(false); }}>
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content medication-modal">
+                <div className="modal-header">
+                  <div><div className="section-kicker">PRESCRIPTION REVIEW</div><h2 id="medication-modal-title" className="modal-title fs-5">Verify medications</h2></div>
+                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setIsModalOpen(false)} />
+                </div>
+                <div className="modal-body">
+                  <div className="medication-edit-list">
+                    {editableMeds.map((medication, index) => (
+                      <div key={`${medication.name}-${index}`} className="medication-edit-row">
+                        <div className="edit-row-title">Medication {index + 1}</div>
+                        <div className="row g-3">
+                          <div className="col-12 col-md-6">
+                            <label className="form-label" htmlFor={`med-name-${index}`}>Medicine name</label>
+                            <input id={`med-name-${index}`} type="text" value={medication.name} onChange={(e) => { const updated = [...editableMeds]; updated[index].name = e.target.value; setEditableMeds(updated); }} className="form-control" />
+                          </div>
+                          <div className="col-12 col-md-6">
+                            <label className="form-label" htmlFor={`med-dose-${index}`}>Dosage & frequency</label>
+                            <input id={`med-dose-${index}`} type="text" value={medication.dosage} onChange={(e) => { const updated = [...editableMeds]; updated[index].dosage = e.target.value; setEditableMeds(updated); }} className="form-control" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-outline-secondary">Cancel</button>
+                  <button type="button" onClick={() => { setMedications(editableMeds); setIsModalOpen(false); }} className="btn btn-primary">Save medication plan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
