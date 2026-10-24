@@ -61,7 +61,6 @@ export default function App() {
       };
 
       recognition.onend = () => {
-        // Auto-recovery for mobile silence timeouts
         if (!userStoppedRef.current && recognitionRef.current) {
           try {
             recognition.start();
@@ -91,7 +90,7 @@ export default function App() {
     } else {
       userStoppedRef.current = false;
       sessionBufferRef.current = "";
-      setTranscript(""); // Clear previous text cleanly on new recording start
+      setTranscript("");
       try {
         recognitionRef.current.start();
       } catch (err) {
@@ -124,8 +123,8 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-800 font-sans p-4 sm:p-8 flex flex-col items-center">
       <div className="max-w-4xl w-full flex flex-col gap-6">
         
-        {/* Top Header Workspace */}
-        <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4">
+        {/* Top Header Workspace (Hidden on Print) */}
+        <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4 no-print">
           <div className="flex justify-between items-center border-b pb-3">
             <div>
               <h1 className="text-base font-extrabold text-indigo-950">NIDAN PRO — Clinical documentation workspace</h1>
@@ -155,7 +154,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Recording Controls */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
             <span className="text-xs font-bold text-indigo-950">{statusLabel}</span>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -194,8 +192,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* Clinical Document Preview Card */}
-        <section className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-slate-200 flex flex-col gap-6">
+        {/* Clinical Document Preview Card (Targeted for printing via id="printablePrescription") */}
+        <section id="printablePrescription" className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-slate-200 flex flex-col gap-6">
           <div className="border-b-2 border-indigo-950 pb-4 flex justify-between items-start">
             <div>
               <h2 className="text-lg font-black text-indigo-950">NIDAN HEALTHCARE CLINIC</h2>
