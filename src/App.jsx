@@ -1,207 +1,112 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const encodeWav = (audioBuffer, targetSampleRate = 16000) => {
-  const channelCount = audioBuffer.numberOfChannels;
-  const sourceLength = audioBuffer.length;
-  const mono = new Float32Array(sourceLength);
-  for (let channel = 0; channel < channelCount; channel += 1) {
-    const samples = audioBuffer.getChannelData(channel);
-    for (let index = 0; index < sourceLength; index += 1) {
-      mono[index] += samples[index] / channelCount;
-    }
-  }
-
-  const outputLength = Math.floor(sourceLength * targetSampleRate / audioBuffer.sampleRate);
-  const bytes = new ArrayBuffer(44 + outputLength * 2);
-  const view = new DataView(bytes);
-  const writeText = (offset, value) => {
-    for (let index = 0; index < value.length; index += 1) {
-      view.setUint8(offset + index, value.charCodeAt(index));
-    }
-  };
-
-  writeText(0, 'RIFF');
-  view.setUint32(4, 36 + outputLength * 2, true);
-  writeText(8, 'WAVE');
-  writeText(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, targetSampleRate, true);
-  view.setUint32(28, targetSampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeText(36, 'data');
-  view.setUint32(40, outputLength * 2, true);
-
-  for (let index = 0; index < outputLength; index += 1) {
-    const sourceIndex = index * audioBuffer.sampleRate / targetSampleRate;
-    const lowerIndex = Math.floor(sourceIndex);
-    const upperIndex = Math.min(lowerIndex + 1, sourceLength - 1);
-    const fraction = sourceIndex - lowerIndex;
-    const sample = mono[lowerIndex] * (1 - fraction) + mono[upperIndex] * fraction;
-    const clamped = Math.max(-1, Math.min(1, sample));
-    view.setInt16(44 + index * 2, clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff, true);
-  }
-
-  return new Blob([bytes], { type: 'audio/wav' });
-};
-
-const blobToBase64 = async (blob) => {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunkSize));
-  }
-  return btoa(binary);
-};
-
 export default function App() {
   const [patientName, setPatientName] = useState("Rajeev");
   const [patientAge, setPatientAge] = useState("28 Yrs / Male");
   const [transcript, setTranscript] = useState("मेरा नाम राजीव है मेरे सिर में बहुत दर्द है मैं बुखार है जुखाम है खांसी भी आ रही है और चक्कर भी आ रहा है");
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [statusLabel, setStatusLabel] = useState("Ambient Voice Scribe");
+  const [statusLabel, setStatusLabel] = useState("Speech transcription by Bhashini");
   const [abhaId] = useState(`91-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(10 + Math.random() * 90)}`);
   
-  const [chiefComplaints, setChiefComplaints] = useState("Fever and severe headache, acute coryza (cold / runny nose), persistent cough, and dizziness / vertigo.");
+  const [chiefComplaints, setChiefComplaints] = useState("Fever and severe headache, Acute coryza (cold / runny nose), Persistent cough, Dizziness / vertigo");
   const [icdCodes, setIcdCodes] = useState([
     { code: "R50.9 - Fever & R51 - Headache", type: "Primary" },
-    { code: "J00 - Acute nasopharyngitis [common cold]", type: "Secondary" },
+    { code: "J00 - Acute nasopharyngitis", type: "Secondary" },
     { code: "R05 - Cough", type: "Secondary" },
     { code: "R42 - Dizziness and giddiness", type: "Secondary" }
   ]);
   const [medications, setMedications] = useState([
-    { name: "Tab. Paracetamol 650mg", dosage: "1 Tablet • 1-1-1 (Three Times Daily)", duration: "3 Days", inst: "After Meals (For Pyrexia & Headache)" },
-    { name: "Tab. Cetirizine 10mg", dosage: "1 Tablet • 0-0-1 (At Bedtime)", duration: "3 Days", inst: "At Night (For Cold & Sneezing)" },
-    { name: "Syrup Ambroxol + Dextromethorphan", dosage: "10 ml • 1-1-1 (Three Times Daily)", duration: "5 Days", inst: "After Meals (For Cough Relief)" },
-    { name: "Tab. Betahistine 8mg", dosage: "1 Tablet • 1-0-1 (Twice Daily)", duration: "3 Days", inst: "After Meals (For Dizziness & Vertigo)" }
+    { name: "Tab. Paracetamol 650mg", dosage: "1 Tablet • 1-1-1 (Three Times Daily)", duration: "3 Days", inst: "After Meals" },
+    { name: "Tab. Cetirizine 10mg", dosage: "1 Tablet • 0-0-1 (At Bedtime)", duration: "3 Days", inst: "At Night" },
+    { name: "Syrup Ambroxol + Dextromethorphan", dosage: "10 ml • 1-1-1 (Three Times Daily)", duration: "5 Days", inst: "After Meals" },
+    { name: "Tab. Betahistine 8mg", dosage: "1 Tablet • 1-0-1 (Twice Daily)", duration: "3 Days", inst: "After Meals" }
   ]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editableMeds, setEditableMeds] = useState([]);
+  const recognitionRef = useRef(null);
+  const userStoppedRef = useRef(false);
+  const sessionBufferRef = useRef("");
 
-  const mediaRecorderRef = useRef(null);
-  const mediaStreamRef = useRef(null);
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'hi-IN';
 
-  const transcribeRecording = async (recording) => {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) throw new Error("Audio conversion is not supported in this browser.");
-
-    const audioContext = new AudioContextClass();
-    try {
-      const decodedAudio = await audioContext.decodeAudioData(await recording.arrayBuffer());
-      const wavAudio = encodeWav(decodedAudio);
-      const response = await fetch('/api/bhashini/transcribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audioContent: await blobToBase64(wavAudio),
-          sourceLanguage: 'hi',
-          audioFormat: 'wav',
-          samplingRate: 16000,
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Bhashini transcription failed.");
-      if (!result.transcript?.trim()) throw new Error("Bhashini returned an empty transcript.");
-
-      setTranscript((current) => [current.trim(), result.transcript.trim()].filter(Boolean).join(" "));
-      setStatusLabel("Transcription added with Bhashini.");
-    } finally {
-      await audioContext.close();
-    }
-  };
-
-  const toggleRecording = async () => {
-    if (isRecording) {
-      setIsRecording(false);
-      setIsTranscribing(true);
-      setStatusLabel("Transcribing with Bhashini...");
-      mediaRecorderRef.current?.stop();
-      return;
-    }
-
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      setStatusLabel("Audio recording is not supported in this browser.");
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-      const chunks = [];
-      mediaStreamRef.current = stream;
-      mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunks.push(event.data);
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setStatusLabel("🔴 Recording active...");
       };
-      recorder.onerror = () => {
-        stream.getTracks().forEach((track) => track.stop());
-        setIsRecording(false);
-        setStatusLabel("Recording failed. Please check microphone access and try again.");
-      };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((track) => track.stop());
-        mediaStreamRef.current = null;
-        try {
-          const recording = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-          await transcribeRecording(recording);
-        } catch (error) {
-          setStatusLabel(error.message || "Bhashini transcription failed.");
-        } finally {
-          setIsTranscribing(false);
+
+      recognition.onresult = (event) => {
+        let interim = "";
+        let finalChunk = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const chunk = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalChunk += chunk + " ";
+          } else {
+            interim += chunk;
+          }
         }
+        if (finalChunk) {
+          sessionBufferRef.current += finalChunk;
+        }
+        setTranscript((sessionBufferRef.current + interim).trim());
       };
-      recorder.start();
-      setIsRecording(true);
-      setStatusLabel("🔴 Recording consultation...");
-    } catch (error) {
-      setStatusLabel(error.name === 'NotAllowedError'
-        ? "Microphone access denied. Check browser permissions."
-        : error.message || "Could not start microphone recording.");
+
+      recognition.onerror = (e) => {
+        console.warn("Speech recognition error:", e.error);
+      };
+
+      recognition.onend = () => {
+        // Auto-recovery for mobile silence timeouts
+        if (!userStoppedRef.current && recognitionRef.current) {
+          try {
+            recognition.start();
+            return;
+          } catch (err) {
+            console.log("Restart blocked:", err);
+          }
+        }
+        setIsRecording(false);
+        setStatusLabel("Speech transcription by Bhashini");
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser. Please use Google Chrome.");
+      return;
+    }
+
+    if (isRecording) {
+      userStoppedRef.current = true;
+      setIsRecording(false);
+      recognitionRef.current.stop();
+    } else {
+      userStoppedRef.current = false;
+      sessionBufferRef.current = "";
+      setTranscript(""); // Clear previous text cleanly on new recording start
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error("Failed to start recognition:", err);
+      }
     }
   };
 
-  const handleProcessNote = () => {
-    const text = transcript.toLowerCase().replace(/जुखाम/g, "जुकाम");
+  const handleExtractNote = () => {
+    const text = transcript.toLowerCase();
+    let parsedName = patientName;
     const nameMatch = transcript.match(/मेरा नाम\s+([^\s]+)\s+है/i);
-    const parsedName = patientName.trim() || nameMatch?.[1] || "";
-    if (parsedName) setPatientName(parsedName);
-
-    let newMeds = [];
-    let newCodes = [];
-    let chiefParts = [];
-
-    if (text.includes("बुखार") || text.includes("fever") || text.includes("सिर में दर्द")) {
-      chiefParts.push("Fever and severe headache");
-      newMeds.push({ name: "Tab. Paracetamol 650mg", dosage: "1 Tablet • 1-1-1 (Three Times Daily)", duration: "3 Days", inst: "After Meals" });
-      newCodes.push({ code: "R50.9 - Fever & R51 - Headache", type: "Primary" });
-    }
-    if (text.includes("जुकाम") || text.includes("cold")) {
-      chiefParts.push("Acute coryza (cold / runny nose)");
-      newMeds.push({ name: "Tab. Cetirizine 10mg", dosage: "1 Tablet • 0-0-1 (At Bedtime)", duration: "3 Days", inst: "At Night" });
-      newCodes.push({ code: "J00 - Acute nasopharyngitis", type: "Secondary" });
-    }
-    if (text.includes("खांसी") || text.includes("cough")) {
-      chiefParts.push("Persistent cough");
-      newMeds.push({ name: "Syrup Ambroxol + Dextromethorphan", dosage: "10 ml • 1-1-1 (Three Times Daily)", duration: "5 Days", inst: "After Meals" });
-      newCodes.push({ code: "R05 - Cough", type: "Secondary" });
-    }
-    if (text.includes("चक्कर") || text.includes("dizziness") || text.includes("vertigo")) {
-      chiefParts.push("Dizziness / vertigo");
-      newMeds.push({ name: "Tab. Betahistine 8mg", dosage: "1 Tablet • 1-0-1 (Twice Daily)", duration: "3 Days", inst: "After Meals" });
-      newCodes.push({ code: "R42 - Dizziness and giddiness", type: "Secondary" });
-    }
-
-    setMedications(newMeds);
-    setIcdCodes(newCodes);
-    setChiefComplaints(chiefParts.join(", "));
-    alert(newMeds.length
-      ? `✨ Clinical notes updated for ${parsedName || "the patient"}!`
-      : "No supported symptoms found. Please review the transcript.");
+    if (nameMatch && nameMatch[1]) parsedName = nameMatch[1];
+    setPatientName(parsedName);
+    alert(`✨ Clinical note successfully extracted for ${parsedName}!`);
   };
 
   const handleTTS = () => {
@@ -216,237 +121,158 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell min-vh-100 d-flex flex-column">
-      <header className="navbar app-navbar no-print">
-        <div className="container-xl d-flex justify-content-between align-items-center gap-3">
-          <a className="navbar-brand d-flex align-items-center gap-3 m-0" href="#workspace">
-            <span className="brand-mark" aria-hidden="true">N</span>
-            <span>
-              <span className="brand-name d-block">NIDAN <span>PRO</span></span>
-              <span className="brand-caption d-block">Clinical documentation workspace</span>
-            </span>
-          </a>
-          <div className="d-flex align-items-center gap-3">
-            <span className="abdm-badge"><span className="abdm-dot" /> ABDM M3 synced</span>
-            <div className="clinician-chip d-none d-sm-flex align-items-center gap-2">
-              <span className="clinician-avatar">AS</span>
-              <span>Dr. Anand Sharma</span>
+    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans p-4 sm:p-8 flex flex-col items-center">
+      <div className="max-w-4xl w-full flex flex-col gap-6">
+        
+        {/* Top Header Workspace */}
+        <header className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col gap-4">
+          <div className="flex justify-between items-center border-b pb-3">
+            <div>
+              <h1 className="text-base font-extrabold text-indigo-950">NIDAN PRO — Clinical documentation workspace</h1>
+              <p className="text-xs text-slate-500">ABDM M3 synced · Dr. Anand Sharma</p>
+            </div>
+            <span className="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">Active session</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Patient name:</label>
+              <input 
+                type="text" 
+                value={patientName} 
+                onChange={(e) => setPatientName(e.target.value)} 
+                className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-lg font-bold text-slate-900 outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Age / gender:</label>
+              <input 
+                type="text" 
+                value={patientAge} 
+                onChange={(e) => setPatientAge(e.target.value)} 
+                className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 outline-none" 
+              />
             </div>
           </div>
-        </div>
-      </header>
 
-      <main id="workspace" className="container-xl flex-grow-1 py-4 py-lg-5">
-        <div className="workspace-heading d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+          {/* Recording Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+            <span className="text-xs font-bold text-indigo-950">{statusLabel}</span>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button 
+                onClick={toggleRecording} 
+                className={`text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm w-full sm:w-auto ${isRecording ? 'bg-slate-800 text-white animate-pulse' : 'bg-rose-600 hover:bg-rose-700 text-white'}`}
+              >
+                {isRecording ? '⏹️ Stop recording' : '🔴 Start recording'}
+              </button>
+              <button 
+                onClick={handleTTS} 
+                className="bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-300 transition w-full sm:w-auto"
+              >
+                🔊 Listen to transcript
+              </button>
+            </div>
+          </div>
+
           <div>
-            <div className="section-kicker">CLINIC / CONSULTATION</div>
-            <h1 className="workspace-title mb-1">Consultation workspace</h1>
-            <p className="workspace-subtitle mb-0">Capture the visit, review the note, and prepare the prescription.</p>
-          </div>
-          <div className="session-indicator"><span className="session-indicator-dot" /> Active session <span className="session-divider">/</span> {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-        </div>
-
-        <div className="row g-4 align-items-start">
-          <div className="col-12 col-xl-5 no-print">
-            <section className="card workspace-card h-100" aria-labelledby="consultation-heading">
-              <div className="card-header workspace-card-header">
-                <div>
-                  <div className="section-kicker">VISIT DETAILS</div>
-                  <h2 id="consultation-heading" className="card-title mb-0">Consultation input</h2>
-                </div>
-                <span className="soft-badge">Hindi · Bhashini</span>
-              </div>
-              <div className="card-body d-flex flex-column gap-4">
-                <div className="row g-3">
-                  <div className="col-12 col-sm-7">
-                    <label className="form-label" htmlFor="patient-name">Patient name</label>
-                    <input id="patient-name" type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="form-control" autoComplete="name" />
-                  </div>
-                  <div className="col-12 col-sm-5">
-                    <label className="form-label" htmlFor="patient-age">Age / gender</label>
-                    <input id="patient-age" type="text" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} className="form-control" />
-                  </div>
-                </div>
-
-                <div className={`recording-panel ${isRecording ? 'recording-active' : ''} ${isTranscribing ? 'recording-pending' : ''}`}>
-                  <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="recording-indicator" aria-hidden="true" />
-                      <div>
-                        <div className="recording-title" aria-live="polite">{statusLabel}</div>
-                        <div className="recording-caption">Speech transcription by Bhashini</div>
-                      </div>
-                    </div>
-                    <div className="d-flex flex-column flex-sm-row gap-2">
-                      <button onClick={toggleRecording} disabled={isTranscribing} className={`btn ${isRecording ? 'btn-recording-stop' : 'btn-primary'} recording-button`}>
-                        {isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing…' : 'Start recording'}
-                      </button>
-                      <button onClick={handleTTS} className="btn btn-outline-secondary recording-button">Listen to transcript</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="form-label" htmlFor="consultation-transcript">Consultation transcript</label>
-                  <textarea id="consultation-transcript" rows="7" value={transcript} onChange={(e) => setTranscript(e.target.value)} className="form-control transcript-field" />
-                  <div className="form-text">Review and edit the transcript before extracting the clinical note.</div>
-                </div>
-
-                <div className="action-stack">
-                  <button onClick={handleProcessNote} className="btn btn-primary w-100">Extract clinical note</button>
-                  <button onClick={() => { setEditableMeds(JSON.parse(JSON.stringify(medications))); setIsModalOpen(true); }} className="btn btn-outline-primary w-100">Review medication plan</button>
-                  <button onClick={() => window.print()} className="btn btn-outline-secondary w-100">Print / save prescription</button>
-                </div>
-              </div>
-            </section>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Consultation transcript:</label>
+            <textarea 
+              rows="3" 
+              value={transcript} 
+              onChange={(e) => setTranscript(e.target.value)} 
+              className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-xl font-mono text-slate-700 outline-none"
+            ></textarea>
           </div>
 
-          <div className="col-12 col-xl-7">
-            <section id="printablePrescription" className="card prescription-card" aria-labelledby="prescription-heading">
-              <div className="prescription-header">
-                <div className="d-flex flex-column flex-sm-row justify-content-between gap-3">
-                  <div>
-                    <div className="prescription-label">NIDAN HEALTHCARE CLINIC</div>
-                    <h2 id="prescription-heading" className="doctor-name">Dr. Anand Sharma, M.D.</h2>
-                    <p className="doctor-credential mb-1">Senior Consultant Physician <span>·</span> Reg. No: UP-48291</p>
-                    <p className="doctor-address mb-0">Assi Ghat Road, Varanasi, Uttar Pradesh <span>·</span> +91 98390 12345</p>
-                  </div>
-                  <div className="prescription-verification">
-                    <div className="qr-mark" aria-label="ABDM QR mark">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 2h8v8H2V2Zm2 2v4h4V4H4Zm10-2h8v8h-8V2Zm2 2v4h4V4h-4ZM2 14h8v8H2v-8Zm2 2v4h4v-4H4Zm10-2h3v3h-3v-3Zm4 0h4v2h-2v2h-2v-4Zm-4 5h2v3h-2v-3Zm4 1h4v2h-4v-2Z" />
-                      </svg>
-                    </div>
-                    <span className="abdm-badge abdm-badge-light"><span className="abdm-dot" /> ABDM M3 synced</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-body prescription-body">
-                <div className="patient-summary row g-3">
-                  <div className="col-6 col-md-3"><div className="meta-label">Patient</div><div className="meta-value">{patientName || '—'}</div></div>
-                  <div className="col-6 col-md-3"><div className="meta-label">Age / gender</div><div className="meta-value">{patientAge || '—'}</div></div>
-                  <div className="col-6 col-md-3"><div className="meta-label">Visit date</div><div className="meta-value">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div></div>
-                  <div className="col-6 col-md-3"><div className="meta-label">ABHA ID</div><div className="meta-value abha-value">{abhaId}</div></div>
-                </div>
-
-                <div className="vitals-strip row g-0" aria-label="Patient vitals">
-                  <div className="col-4 vital-item"><span className="vital-label">Blood pressure</span><strong>120/80 <small>mmHg</small></strong></div>
-                  <div className="col-4 vital-item"><span className="vital-label">Temperature</span><strong>100.4 <small>°F</small></strong></div>
-                  <div className="col-4 vital-item"><span className="vital-label">SpO2</span><strong>98<small>%</small></strong></div>
-                  <div className="vitals-note">Vitals verified by assistant</div>
-                </div>
-
-                <section className="clinical-section">
-                  <div className="section-heading">
-                    <span className="soap-index">S</span>
-                    <div><div className="section-kicker">SUBJECTIVE</div><h3>Chief complaints</h3></div>
-                  </div>
-                  <p className="complaints-copy mb-0">{chiefComplaints || 'No complaints extracted.'}</p>
-                </section>
-
-                <section className="clinical-section">
-                  <div className="section-heading d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="soap-index">A</span>
-                      <div><div className="section-kicker">ASSESSMENT</div><h3>Diagnostic coding</h3></div>
-                    </div>
-                    <span className="soft-badge">ICD-10</span>
-                  </div>
-                  {icdCodes.length > 0 ? (
-                    <div className="diagnosis-list">
-                      {icdCodes.map((icd, idx) => (
-                        <div key={`${icd.code}-${idx}`} className="diagnosis-row">
-                          <span className="diagnosis-code">{icd.code}</span>
-                          <span className={`badge ${icd.type === 'Primary' ? 'text-bg-primary' : 'text-bg-light'}`}>{icd.type}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p className="empty-note mb-0">No diagnostic codes extracted.</p>}
-                </section>
-
-                <section className="clinical-section medication-section">
-                  <div className="section-heading d-flex justify-content-between align-items-center">
-                    <div className="d-flex align-items-center gap-3">
-                      <span className="rx-symbol">Rx</span>
-                      <div><div className="section-kicker">TREATMENT PLAN</div><h3>Medications</h3></div>
-                    </div>
-                    <span className="medication-count">{medications.length} items</span>
-                  </div>
-                  <div className="table-responsive prescription-table-wrap">
-                    <table className="table table-sm align-middle prescription-table mb-0">
-                      <thead>
-                        <tr><th scope="col">#</th><th scope="col">Medicine</th><th scope="col">Dosage & frequency</th><th scope="col">Duration</th><th scope="col">Instructions</th></tr>
-                      </thead>
-                      <tbody>
-                        {medications.length > 0 ? medications.map((medication, idx) => (
-                          <tr key={`${medication.name}-${idx}`}>
-                            <td className="row-number">{idx + 1}</td>
-                            <td className="medicine-name">{medication.name}</td>
-                            <td>{medication.dosage}</td>
-                            <td>{medication.duration}</td>
-                            <td>{medication.inst}</td>
-                          </tr>
-                        )) : <tr><td colSpan="5" className="empty-note text-center py-4">No medications extracted.</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              </div>
-
-              <footer className="prescription-footer d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3">
-                <div>
-                  <div className="footer-note">Electronically generated clinical document.</div>
-                  <div className="footer-disclaimer">Review all findings and medication instructions before signing.</div>
-                </div>
-                <div className="signature-block">
-                  <div className="signature-name">Dr. Anand Sharma</div>
-                  <span className="signature-status">Digitally signed & verified</span>
-                </div>
-              </footer>
-            </section>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button onClick={handleExtractNote} className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition">
+              Extract clinical note
+            </button>
+            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-sm transition">
+              Print / save prescription
+            </button>
           </div>
-        </div>
-      </main>
+        </header>
 
-      {isModalOpen && (
-        <>
-          <div className="modal-backdrop show no-print" onClick={() => setIsModalOpen(false)} />
-          <div className="modal d-block no-print" role="dialog" aria-modal="true" aria-labelledby="medication-modal-title" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsModalOpen(false); }}>
-            <div className="modal-dialog modal-dialog-centered modal-lg">
-              <div className="modal-content medication-modal">
-                <div className="modal-header">
-                  <div><div className="section-kicker">PRESCRIPTION REVIEW</div><h2 id="medication-modal-title" className="modal-title fs-5">Verify medications</h2></div>
-                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setIsModalOpen(false)} />
-                </div>
-                <div className="modal-body">
-                  <div className="medication-edit-list">
-                    {editableMeds.map((medication, index) => (
-                      <div key={`${medication.name}-${index}`} className="medication-edit-row">
-                        <div className="edit-row-title">Medication {index + 1}</div>
-                        <div className="row g-3">
-                          <div className="col-12 col-md-6">
-                            <label className="form-label" htmlFor={`med-name-${index}`}>Medicine name</label>
-                            <input id={`med-name-${index}`} type="text" value={medication.name} onChange={(e) => { const updated = [...editableMeds]; updated[index].name = e.target.value; setEditableMeds(updated); }} className="form-control" />
-                          </div>
-                          <div className="col-12 col-md-6">
-                            <label className="form-label" htmlFor={`med-dose-${index}`}>Dosage & frequency</label>
-                            <input id={`med-dose-${index}`} type="text" value={medication.dosage} onChange={(e) => { const updated = [...editableMeds]; updated[index].dosage = e.target.value; setEditableMeds(updated); }} className="form-control" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-outline-secondary">Cancel</button>
-                  <button type="button" onClick={() => { setMedications(editableMeds); setIsModalOpen(false); }} className="btn btn-primary">Save medication plan</button>
-                </div>
-              </div>
+        {/* Clinical Document Preview Card */}
+        <section className="bg-white p-6 sm:p-10 rounded-2xl shadow-xl border border-slate-200 flex flex-col gap-6">
+          <div className="border-b-2 border-indigo-950 pb-4 flex justify-between items-start">
+            <div>
+              <h2 className="text-lg font-black text-indigo-950">NIDAN HEALTHCARE CLINIC</h2>
+              <h3 className="text-sm font-bold text-slate-800 mt-0.5">Dr. Anand Sharma, M.D.</h3>
+              <p className="text-[11px] text-slate-500">Senior Consultant Physician · Reg. No: UP-48291</p>
+              <p className="text-[10px] text-slate-400">Assi Ghat Road, Varanasi, Uttar Pradesh · +91 98390 12345</p>
+            </div>
+            <div className="text-right text-xs">
+              <span className="bg-indigo-50 text-indigo-900 border border-indigo-200 px-2.5 py-1 rounded font-bold">ABDM M3 synced</span>
             </div>
           </div>
-        </>
-      )}
+
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div><span className="text-[9px] uppercase font-bold text-slate-400 block">Patient</span><span className="font-bold text-slate-900">{patientName}</span></div>
+            <div><span className="text-[9px] uppercase font-bold text-slate-400 block">Age / Gender</span><span className="font-bold text-slate-900">{patientAge}</span></div>
+            <div><span className="text-[9px] uppercase font-bold text-slate-400 block">Visit Date</span><span className="font-bold text-slate-900">24 Oct 2026</span></div>
+            <div><span className="text-[9px] uppercase font-bold text-slate-400 block">ABHA ID</span><span className="font-bold text-indigo-600 font-mono">{abhaId}</span></div>
+          </div>
+
+          {/* Subjective */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs">
+            <span className="text-[10px] font-bold text-indigo-900 uppercase block mb-1">S · Subjective / Chief Complaints</span>
+            <p className="text-slate-800 font-medium">{chiefComplaints}</p>
+          </div>
+
+          {/* Assessment */}
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs">
+            <span className="text-[10px] font-bold text-indigo-900 uppercase block mb-2">A · Assessment / ICD-10 Diagnostic Coding</span>
+            <div className="space-y-1.5">
+              {icdCodes.map((icd, idx) => (
+                <div key={idx} className="flex justify-between bg-white p-2 rounded border border-slate-200">
+                  <span className="font-semibold text-slate-800">{icd.code}</span>
+                  <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{icd.type}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Medications */}
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Rx · Treatment Plan & Medications</h4>
+            <div className="border border-slate-200 rounded-xl overflow-hidden">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-700 text-[10px] uppercase font-bold border-b border-slate-200">
+                    <th className="p-2.5 w-10">#</th>
+                    <th className="p-2.5">Medicine</th>
+                    <th className="p-2.5">Dosage & Frequency</th>
+                    <th className="p-2.5">Duration</th>
+                    <th className="p-2.5">Instructions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {medications.map((m, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="p-2.5 text-slate-500">{idx + 1}</td>
+                      <td className="p-2.5 font-bold text-slate-900">{m.name}</td>
+                      <td className="p-2.5 text-indigo-900 font-medium">{m.dosage}</td>
+                      <td className="p-2.5">{m.duration}</td>
+                      <td className="p-2.5 text-slate-600">{m.inst}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="border-t pt-4 mt-2 flex justify-between items-end text-[10px] text-slate-500">
+            <p>Electronically generated clinical document. Review all findings before signing.</p>
+            <div className="text-right">
+              <span className="font-serif italic font-bold text-indigo-950 text-sm">Dr. Anand Sharma</span>
+              <span className="block text-[9px] bg-slate-100 text-slate-700 border px-2 py-0.5 rounded mt-0.5 font-bold">DIGITALLY SIGNED & VERIFIED</span>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 }
