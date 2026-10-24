@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media print {
+    @page {
+        margin: 0;
+        size: auto;
+    }
+    body * {
+        visibility: hidden;
+    }
+    #printablePrescription, #printablePrescription * {
+        visibility: visible;
+    }
+    #printablePrescription {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 16px;
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
